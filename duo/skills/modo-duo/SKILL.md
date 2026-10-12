@@ -57,4 +57,5 @@ Si el usuario ya pidió el modo equipo o usó `/duo`, no preguntes: ponlo en mar
 
 - Si los tipos `duo:*` no aparecen, el mod no está cargado: dile al usuario que ejecute `/reload-plugins` o que lo instale con `/plugin install duo@claude-mods`.
 - Si un agente se bloquea o pregunta algo que solo sabe el usuario, pregúntaselo y pásale la respuesta por la pizarra.
+- No reanudes un agente que ya ha terminado (ni con SendMessage ni por la pizarra): al reanudarse, Claude Code lo ejecuta sin los hooks del mod, así que no tendría pizarra ni barrera de seguridad. Si hace falta más trabajo, lanza uno nuevo con el contexto.
 - Si un archivo está reservado por un agente que no responde, pídele que lo suelte por la pizarra o párale el agente.

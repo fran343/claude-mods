@@ -1,6 +1,6 @@
 {
   "name": "duo",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Modo equipo: el coordinador reparte una tarea en un plan y la ejecuta con varios agentes que se hablan, sin pisarse los archivos.",
   "types": "./types/index.d.ts",
   "author": {

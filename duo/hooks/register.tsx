@@ -280,7 +280,7 @@ Para tareas grandes (migraciones, refactors que tocan muchas clases, cambios de 
 2. Tarea grande: divídela en subtareas con mcp__duo__plan { tareas: [{ id, titulo, detalle, dependeDe, archivos }] }. Pon como independientes las que se puedan hacer a la vez; las que tocan los mismos archivos, en secuencia (con dependeDe). Cada archivo solo lo puede editar un agente a la vez.
 3. Si primero hay que entender el impacto, empieza con un duo:analista (o una tarea de análisis) y crea el plan con lo que encuentre. El analista no modifica archivos.
 4. Lanza un duo:trabajador por cada tarea sin dependencias pendientes, a la vez y en segundo plano (run_in_background: true), con name = id de la tarea (T1, T2...) y la descripción empezando por ese id. Pásale en el prompt el id, el detalle y los archivos. Si ya hay ${max} agentes trabajando, el lanzamiento se rechaza: espera a que termine alguno.
-5. Los agentes marcan sus tareas con mcp__duo__tarea. Cuando te avisen de tareas desbloqueadas, lánzalas. Si una falla o se bloquea, decide: reintentar, reasignar o preguntar al usuario. Te hablan por la pizarra (mcp__duo__enviar / mcp__duo__leer) y tú puedes escribirles con el nombre del agente o "todos".
+5. Los agentes marcan sus tareas con mcp__duo__tarea. Cuando te avisen de tareas desbloqueadas, lánzalas. Si una falla o se bloquea, decide: reintentar, reasignar o preguntar al usuario. Un agente que ya ha terminado no se reanuda (ni con SendMessage ni por la pizarra): al reanudarse, Claude Code lo ejecuta sin los hooks del mod, sin pizarra ni barrera de seguridad. Si hace falta más trabajo, lanza un agente nuevo con el contexto. Te hablan por la pizarra (mcp__duo__enviar / mcp__duo__leer) y tú puedes escribirles con el nombre del agente o "todos".
 6. En tareas de Salesforce con entrega (paquete, validación y pull request), añade al plan una tarea final que dependa de todas las demás y lánzala con duo:entregas. Solo valida en sandbox: nunca despliega en producción ni fusiona.
 7. Al final: revisa el conjunto (diff y pruebas) y resume al usuario qué se hizo, qué se cambió y qué queda pendiente.
 Los papeles fijos duo:analista y duo:implementador siguen existiendo: un caso particular con dos agentes.`
@@ -567,9 +567,8 @@ export const register: Register = (on, options) => {
 
     let entrega = 'Queda en la pizarra.'
     const aviso = `[pizarra duo] Mensaje #${msg.id} de ${de}:\n${msg.texto}\n\n(Contesta con mcp__duo__enviar.)`
-    // Se entrega desde un temporizador y no dentro de esta llamada: si el mensaje
-    // despierta al destinatario, su turno no queda "dentro" de un hook de duo
-    // (re-entrada), donde el motor no ejecutaría la pizarra ni la barrera.
+    // Se entrega desde un temporizador, fuera de esta llamada, para que el
+    // envío no la retrase. Solo a agentes que siguen trabajando (ver abajo).
     const mandar = (id: string): void => {
       $.clock.after(0, () => {
         $.session.send({ to: { agentId: id }, text: aviso }).catch(() => {})
@@ -591,7 +590,12 @@ export const register: Register = (on, options) => {
       }
     } else {
       const destino = para === 'tester' ? testerId : eq[para]?.agentId
-      if (destino && destino !== e.agentId) {
+      // Un agente que ya terminó no se despierta: al reanudarse con un mensaje,
+      // Claude Code lo ejecuta sin los hooks de los mods (ni pizarra ni barrera).
+      const sigue = para === 'tester' ? testerActivo : activo(eq[para], Date.now())
+      if (destino && !sigue) {
+        entrega = `${para} ya ha terminado, así que no se le despierta; queda en la pizarra. Si hace falta que siga, el coordinador lanzará un agente nuevo.`
+      } else if (destino && destino !== e.agentId) {
         mandar(destino)
         entrega = `Enviado a ${para}; le llega en un momento (y si no, lo leerá con mcp__duo__leer).`
       } else if (!destino) {
