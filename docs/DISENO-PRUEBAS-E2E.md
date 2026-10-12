@@ -96,3 +96,20 @@ innecesarios en lo que ve el usuario.
 - `claude plugin validate /home/user/claude-mods/pruebas-e2e`
 - `claude plugin test /home/user/claude-mods/pruebas-e2e`
 - `tsc -p /tmp/claude-0/-home-user/c70e4e83-b27d-5706-85d1-e2c81279f9bf/scratchpad/tc-e2e/tsconfig.json`
+
+## 10. Solo en local (requisito del usuario, opción `soloLocal`, por defecto activada)
+Nada de lo que genere Playwright puede aparecer como cambio en git: ni archivos nuevos ni modificados.
+- Todo vive dentro de la carpeta `carpetaTests` (por defecto `e2e-local/`, en la raíz del repositorio):
+  su propio `package.json` (con `@playwright/test`), `node_modules`, `playwright.config.ts`, `global-setup.ts`,
+  `pages/`, los `*.spec.ts`, `.auth/` y los informes (`test-results/`, `playwright-report/`).
+- NUNCA se modifica un archivo que ya esté en el repositorio: ni el `package.json` raíz, ni `.gitignore`, ni
+  `.forceignore`, ni `sfdx-project.json`. Nada de `git add` ni commits.
+- T1 (register.tsx), en `/playwright`, ANTES de lanzar el agente y sin depender de él: si `soloLocal`, añade
+  `/<carpetaTests>/` a `.git/info/exclude` si no está ya (leer con `$.fs.read`, escribir con `$.fs.write`; la
+  ruta de `.git` puede no existir si no es un repositorio: entonces avisar y seguir). Si la carpeta ya tenía
+  archivos seguidos por git, avisarlo en la respuesta del comando.
+- T2 (prompt.ts): `OpcionesE2e` gana `soloLocal: boolean`. Con soloLocal, el prompt exige lo de arriba y, al
+  terminar, comprobar con `git status --porcelain` que no aparece NADA nuevo por su culpa; si aparece algo, moverlo
+  dentro de la carpeta o deshacerlo, y decirlo en la respuesta. Los comandos se lanzan desde la carpeta
+  (`cd <carpeta> && npx playwright test ...`), con `npm install` dentro de ella.
+- T4: prueba de que `/playwright` añade la carpeta a `.git/info/exclude` una sola vez (stub de fs).

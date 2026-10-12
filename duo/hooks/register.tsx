@@ -31,12 +31,14 @@ const TIPOS: Record<string, DuoTipo> = {
 }
 const HERRAMIENTAS_EDICION = ['Edit', 'Write', 'MultiEdit', 'NotebookEdit']
 
+const OCUPADA = 'La pizarra está ocupada un momento. Espera unos segundos y vuelve a intentarlo.'
+
 const COMO_HABLAR = `
 ## Cómo hablar con tus compañeros
 Trabajas en equipo y en paralelo con otros agentes. Os comunicáis SOLO con estas herramientas:
 - mcp__duo__enviar { para, texto }: deja un mensaje en la pizarra. "para" es el nombre de un compañero del equipo (por ejemplo "analista", "implementador" o el id de una tarea como "T2"), "coordinador", "tester" (el tester de Apex, si está en marcha) o "todos" (a todos los que estén trabajando). El destinatario lo recibe al momento.
 - mcp__duo__leer {}: lee la pizarra entera (lo que se han dicho) y, arriba, el resumen del plan.
-Lee la pizarra al empezar y cada vez que termines un bloque de trabajo. Mensajes cortos y concretos: rutas de archivo, nombres de clases, decisiones. Si algo bloquea, avisa al "coordinador".`
+Lee la pizarra al empezar y cada vez que termines un bloque de trabajo. Mensajes cortos y concretos: rutas de archivo, nombres de clases, decisiones. Si algo bloquea, avisa al "coordinador". Si la pizarra responde que está ocupada, espera unos segundos y repite.`
 
 const PROMPT_ANALISTA = `Eres el ANALISTA de un equipo de agentes. Tu trabajo es entender el código y decir qué hay que cambiar; NO modificas archivos.
 
@@ -565,12 +567,13 @@ export const register: Register = (on, options) => {
 
     let entrega = 'Queda en la pizarra.'
     const aviso = `[pizarra duo] Mensaje #${msg.id} de ${de}:\n${msg.texto}\n\n(Contesta con mcp__duo__enviar.)`
-    const mandar = async (id: string): Promise<boolean> => {
-      try {
-        return (await $.session.send({ to: { agentId: id }, text: aviso })).isDelivered
-      } catch {
-        return false
-      }
+    // Se entrega desde un temporizador y no dentro de esta llamada: si el mensaje
+    // despierta al destinatario, su turno no queda "dentro" de un hook de duo
+    // (re-entrada), donde el motor no ejecutaría la pizarra ni la barrera.
+    const mandar = (id: string): void => {
+      $.clock.after(0, () => {
+        $.session.send({ to: { agentId: id }, text: aviso }).catch(() => {})
+      })
     }
     if (para === 'coordinador') {
       entrega = (await avisarCoordinador($, aviso)) ? 'Entregado al coordinador.' : 'Queda en la pizarra; el coordinador lo leerá con mcp__duo__leer.'
@@ -583,19 +586,14 @@ export const register: Register = (on, options) => {
       if (destinos.length === 0) {
         entrega = 'No hay nadie más trabajando; queda en la pizarra.'
       } else {
-        const ok = await Promise.all(destinos.map(async ([n, id]) => ((await mandar(id)) ? n : undefined)))
-        const entregados = ok.filter((n): n is string => !!n)
-        entrega = `Entregado a ${entregados.length} (${entregados.join(', ') || 'nadie'}); el resto lo leerá en la pizarra.`
+        for (const [, id] of destinos) mandar(id)
+        entrega = `Enviado a ${destinos.length} (${destinos.map(([n]) => n).join(', ')}); les llega en un momento.`
       }
     } else {
       const destino = para === 'tester' ? testerId : eq[para]?.agentId
       if (destino && destino !== e.agentId) {
-        try {
-          const sent = await $.session.send({ to: { agentId: destino }, text: aviso })
-          entrega = sent.isDelivered ? `Entregado a ${para}.` : `Queda en la pizarra (${sent.reason ?? 'no entregado'}).`
-        } catch {
-          entrega = `Queda en la pizarra; ${para} lo leerá con mcp__duo__leer.`
-        }
+        mandar(destino)
+        entrega = `Enviado a ${para}; le llega en un momento (y si no, lo leerá con mcp__duo__leer).`
       } else if (!destino) {
         entrega = para === 'tester' ? 'El tester aún no está en marcha; queda en la pizarra.' : `${para} aún no está en marcha; lo leerá en la pizarra al empezar.`
       }
@@ -741,7 +739,21 @@ export const register: Register = (on, options) => {
       // Apuntar la clase es secundario: la edición ya está hecha.
     }
     return r
-  }).catch(($, e, next) => next(e))
+  }).catch(($, e, next) => {
+    // Re-entrada: el motor no ha ejecutado el hook (la llamada nace dentro de otra
+    // de duo) y aquí no se puede leer el estado. La barrera se aplica igual a
+    // cualquier subagente, y la pizarra pide repetir en vez de quedarse sin respuesta.
+    if (next.error?.kind === 're-entry') {
+      const tool = String(e.tool)
+      if (tool.startsWith('mcp__duo__')) return { deny: OCUPADA }
+      if (tool === 'Bash' && e.agentId) {
+        const cmd = String((e as unknown as { command?: unknown }).command ?? '')
+        const prohibido = comandoProhibido(cmd, ramaBase, { orgPruebas: orgApex })
+        if (prohibido) return { deny: `El modo equipo no permite ${prohibido}.` }
+      }
+    }
+    return next(e)
+  })
 
   // Seguimiento: cuando un agente acaba (o se interrumpe).
   on('turn.complete', async ($, e, next) => {

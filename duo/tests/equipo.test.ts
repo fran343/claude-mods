@@ -112,9 +112,13 @@ test('enviar a un nombre que no existe se rechaza con la lista de nombres válid
 })
 
 test('enviar a "todos" llega a los miembros que están trabajando', async ($, on) => {
+  const reloj = mock.clock(on, { now: Date.now() })
   const { envios } = preparar(on, { equipo: { T1: miembro('a1', 'T1'), T2: miembro('a2', 'T2'), T3: miembro('a3', 'T3', { estado: 'terminado' }) } })
   const r = await $.tool.call({ tool: 'mcp__duo__enviar', para: 'todos', texto: 'Cambio de plan' })
-  expect(String(r.text ?? JSON.stringify(r.result))).toContain('Entregado a 2')
+  expect(String(r.text ?? JSON.stringify(r.result))).toContain('Enviado a 2')
+  // La entrega sale de un temporizador, fuera de la llamada (evita la re-entrada).
+  expect(envios.length).toBe(0)
+  await reloj.advance(1)
   expect(envios.length).toBe(2)
   expect(envios.join(' ')).toContain('a1')
   expect(envios.join(' ')).toContain('a2')
