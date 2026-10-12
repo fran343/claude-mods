@@ -1,0 +1,11 @@
+{
+  "name": "claude-mods",
+  "owner": { "name": "fran343" },
+  "plugins": [
+    {
+      "name": "duo",
+      "source": "./duo",
+      "description": "Dos agentes que trabajan en paralelo y se hablan: uno analiza el impacto y otro implementa."
+    }
+  ]
+}
