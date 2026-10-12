@@ -1,6 +1,6 @@
 {
   "name": "duo",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Dos agentes que trabajan en paralelo y se hablan: uno analiza el impacto y otro implementa.",
   "types": "./types/index.d.ts",
   "author": {

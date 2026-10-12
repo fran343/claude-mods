@@ -17,6 +17,7 @@ Se comunican por una **pizarra** compartida. Claude hace de **coordinador**: los
   `/duo Construye la migración del objeto Placement de SFDC`
 - También puedes pedirlo con tus palabras. En tareas grandes, Claude decide por sí mismo usar el modo duo.
 - `/duo-panel` abre un panel con la conversación entre los dos agentes.
+- Incluye la skill **modo-duo**: cuando una tarea lo merece (migraciones, refactors grandes, cambios de modelo de datos), Claude te recomienda usar el modo duo y te explica por qué antes de lanzarlo.
 
 ### Instalación
 
