@@ -19,3 +19,8 @@ test('un destino que no existe se rechaza', async $ => {
   const r = await $.tool.call({ tool: 'mcp__duo__enviar', para: 'nadie', texto: 'hola' })
   expect(r.isError === true || r.deny !== undefined).toBe(true)
 })
+
+test('con otro modelo para el analista el plugin carga y funciona', { options: { modeloAnalista: 'haiku' } }, async $ => {
+  const enviado = await $.tool.call({ tool: 'mcp__duo__enviar', para: 'analista', texto: 'Revisa PlacementService' })
+  expect(enviado.text ?? JSON.stringify(enviado.result)).toContain('Mensaje #1')
+})

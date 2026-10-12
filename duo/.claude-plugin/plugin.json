@@ -1,9 +1,65 @@
 {
   "name": "duo",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Dos agentes que trabajan en paralelo y se hablan: uno analiza el impacto y otro implementa.",
   "types": "./types/index.d.ts",
   "author": {
     "name": "fran343"
+  },
+  "userConfig": {
+    "testerApex": {
+      "type": "boolean",
+      "title": "Tester de Apex",
+      "description": "Lanza un agente aparte que crea y ejecuta los tests de cada clase Apex modificada hasta llegar a la cobertura mínima.",
+      "default": true
+    },
+    "coberturaMinima": {
+      "type": "number",
+      "title": "Cobertura mínima (%)",
+      "description": "Cobertura que debe alcanzar cada clase o trigger Apex modificado.",
+      "default": 75
+    },
+    "orgApex": {
+      "type": "string",
+      "title": "Org de pruebas",
+      "description": "Alias de la org (sandbox o scratch) donde lanzar los tests. Vacío: la org por defecto del proyecto.",
+      "default": ""
+    },
+    "modeloAnalista": {
+      "type": "string",
+      "title": "Modelo del analista",
+      "description": "Modelo con el que trabaja el analista. \"inherit\" = el mismo modelo que la conversación.",
+      "options": [
+        "opus",
+        "sonnet",
+        "haiku",
+        "inherit"
+      ],
+      "default": "opus"
+    },
+    "modeloImplementador": {
+      "type": "string",
+      "title": "Modelo del implementador",
+      "description": "Modelo con el que trabaja el implementador. \"inherit\" = el mismo modelo que la conversación.",
+      "options": [
+        "opus",
+        "sonnet",
+        "haiku",
+        "inherit"
+      ],
+      "default": "sonnet"
+    },
+    "modeloTester": {
+      "type": "string",
+      "title": "Modelo del tester de Apex",
+      "description": "Modelo con el que trabaja el tester de Apex. \"inherit\" = el mismo modelo que la conversación.",
+      "options": [
+        "opus",
+        "sonnet",
+        "haiku",
+        "inherit"
+      ],
+      "default": "sonnet"
+    }
   }
 }

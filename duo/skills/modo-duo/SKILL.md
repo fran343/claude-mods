@@ -11,6 +11,12 @@ El mod **duo** está instalado y ofrece dos tipos de agente y una pizarra compar
 - `duo:implementador`: construye el cambio por bloques siguiendo lo que le pasa el analista, y le avisa de cada bloque para que lo revise.
 - La pizarra: `mcp__duo__enviar { para, texto }` y `mcp__duo__leer {}`. Tú eres el **coordinador**.
 
+## Tester de Apex
+
+Si el proyecto es de Salesforce, cada vez que se modifica una clase (`.cls`) o un trigger (`.trigger`) que no es de test, el mod lo apunta y, al acabar el turno, lanza él solo un agente `duo:tester-apex` en segundo plano (o le pasa las clases nuevas si ya está trabajando). Ese agente crea y ejecuta los tests hasta llegar a la cobertura mínima, solo en sandbox o scratch org, y avisa al coordinador con el resultado. No lo lances tú a mano. Se ve en `/duo-seguimiento` y puede escribir y recibir mensajes en la pizarra como `tester`.
+
+Opciones en `/config` (mod duo): `testerApex` (activarlo o no), `coberturaMinima` (75 % por defecto), `orgApex` (alias de la org de pruebas) y el modelo de cada agente: `modeloAnalista` (opus), `modeloImplementador` (sonnet) y `modeloTester` (sonnet); `inherit` usa el mismo modelo que la conversación.
+
 ## Cuándo recomendarlo
 
 Valora la tarea antes de empezar. Merece la pena el modo duo si se cumplen **dos o más** de estas condiciones:
