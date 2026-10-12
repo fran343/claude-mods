@@ -112,9 +112,13 @@ test('enviar a un nombre que no existe se rechaza con la lista de nombres válid
 })
 
 test('enviar a "todos" llega a los miembros que están trabajando', async ($, on) => {
+  const reloj = mock.clock(on, { now: Date.now() })
   const { envios } = preparar(on, { equipo: { T1: miembro('a1', 'T1'), T2: miembro('a2', 'T2'), T3: miembro('a3', 'T3', { estado: 'terminado' }) } })
   const r = await $.tool.call({ tool: 'mcp__duo__enviar', para: 'todos', texto: 'Cambio de plan' })
-  expect(String(r.text ?? JSON.stringify(r.result))).toContain('Entregado a 2')
+  expect(String(r.text ?? JSON.stringify(r.result))).toContain('Enviado a 2')
+  // La entrega sale de un temporizador, fuera de la llamada.
+  expect(envios.length).toBe(0)
+  await reloj.advance(1)
   expect(envios.length).toBe(2)
   expect(envios.join(' ')).toContain('a1')
   expect(envios.join(' ')).toContain('a2')
@@ -178,4 +182,18 @@ test('el tester solo despliega en la org de pruebas si hay una configurada', () 
   expect(comandoProhibido('sf project deploy start --target-org mi-sandbox', '', tester)).toBeUndefined()
   expect(comandoProhibido('sf project deploy start --target-org otra', '', tester)).toBeDefined()
   expect(comandoProhibido('sf project deploy start', '', { permitirDeploy: true })).toBeUndefined()
+})
+
+test('a un agente que ya ha terminado no se le despierta: el mensaje queda en la pizarra', async ($, on) => {
+  const reloj = mock.clock(on, { now: Date.now() })
+  const { envios } = preparar(on, { equipo: { T1: miembro('a1', 'T1', { estado: 'terminado' }), T2: miembro('a2', 'T2') } })
+  const r = await $.tool.call({ tool: 'mcp__duo__enviar', para: 'T1', texto: 'una cosa más' })
+  expect(String(r.text ?? JSON.stringify(r.result))).toContain('ya ha terminado')
+  const vivo = await $.tool.call({ tool: 'mcp__duo__enviar', para: 'T2', texto: 'sigue' })
+  expect(String(vivo.text ?? JSON.stringify(vivo.result))).toContain('Enviado a T2')
+  await reloj.advance(1)
+  expect(envios.join(' ')).toContain('a2')
+  expect(envios.join(' ')).not.toContain('a1')
+  const leido = await $.tool.call({ tool: 'mcp__duo__leer' })
+  expect(String(leido.text ?? leido.result)).toContain('una cosa más')
 })
