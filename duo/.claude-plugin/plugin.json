@@ -1,7 +1,7 @@
 {
   "name": "duo",
-  "version": "0.3.0",
-  "description": "Dos agentes que trabajan en paralelo y se hablan: uno analiza el impacto y otro implementa.",
+  "version": "0.4.0",
+  "description": "Modo equipo: el coordinador reparte una tarea en un plan y la ejecuta con varios agentes que se hablan, sin pisarse los archivos.",
   "types": "./types/index.d.ts",
   "author": {
     "name": "fran343"
@@ -60,6 +60,48 @@
         "inherit"
       ],
       "default": "sonnet"
+    },
+    "modeloTrabajador": {
+      "type": "string",
+      "title": "Modelo de los trabajadores",
+      "description": "Modelo con el que trabajan los agentes genéricos del modo equipo. \"inherit\" = el mismo modelo que la conversación.",
+      "options": [
+        "opus",
+        "sonnet",
+        "haiku",
+        "inherit"
+      ],
+      "default": "sonnet"
+    },
+    "maxAgentes": {
+      "type": "number",
+      "title": "Máximo de agentes a la vez",
+      "description": "Cuántos agentes del modo equipo pueden estar trabajando al mismo tiempo (no cuenta el tester de Apex).",
+      "default": 5
+    },
+    "modeloEntregas": {
+      "type": "string",
+      "title": "Modelo del agente de entregas",
+      "description": "Modelo con el que trabaja el agente que prepara el paquete y el pull request. \"inherit\" = el mismo modelo que la conversación.",
+      "options": [
+        "opus",
+        "sonnet",
+        "haiku",
+        "inherit"
+      ],
+      "default": "sonnet"
+    },
+    "ramaBase": {
+      "type": "string",
+      "title": "Rama base",
+      "description": "Rama desde la que se crea la rama de entrega y contra la que se abre el pull request. Vacío: la rama principal del repositorio.",
+      "default": ""
+    },
+    "crearPR": {
+      "type": "boolean",
+      "title": "Crear el pull request",
+      "description": "El agente de entregas abre el pull request en GitHub (nunca lo fusiona). Si lo desactivas, solo deja la rama subida.",
+      "default": true
     }
   }
 }
