@@ -86,7 +86,9 @@ test('reservas de archivos: otro agente es denegado y se libera al terminar o qu
   expect(comprobarReserva(res, eq, '/p/Otro.cls', 'T2')).toBeUndefined()
   expect(comprobarReserva(res, { ...eq, T1: miembro('a1', 'T1', { estado: 'terminado' }) }, '/p/Foo.cls', 'T2')).toBeUndefined()
   const ahora = Date.now()
-  expect(comprobarReserva(res, { ...eq, T1: miembro('a1', 'T1', { ultimo: ahora - 20 * 60_000 }) }, '/p/Foo.cls', 'T2', ahora)).toBeUndefined()
+  // Un comando largo (deploy con --wait 60) no lo da por colgado; pasada la hora, sí.
+  expect(comprobarReserva(res, { ...eq, T1: miembro('a1', 'T1', { ultimo: ahora - 20 * 60_000 }) }, '/p/Foo.cls', 'T2', ahora)).toBeDefined()
+  expect(comprobarReserva(res, { ...eq, T1: miembro('a1', 'T1', { ultimo: ahora - 70 * 60_000 }) }, '/p/Foo.cls', 'T2', ahora)).toBeUndefined()
 })
 
 test('comandoProhibido corta lo peligroso y deja pasar lo normal', () => {
@@ -158,4 +160,22 @@ test('se puede desplegar solo en la org de pruebas nombrada en el comando', () =
   expect(comandoProhibido('sf project deploy start --target-org produccion', '', org)).toBeDefined()
   expect(comandoProhibido('sf project deploy start --target-org mi-sandbox-prod', '', org)).toBeDefined()
   expect(comandoProhibido('sf project deploy start --source-dir force-app', '')).toContain('/config')
+})
+
+test('la barrera no se salta con dos orgs, con git -C ni desde entregas', () => {
+  const org = { orgPruebas: 'mi-sandbox' }
+  expect(comandoProhibido('sf project deploy start --target-org mi-sandbox --target-org produccion', '', org)).toBeDefined()
+  expect(comandoProhibido('sf project deploy start --target-org produccion -o mi-sandbox', '', org)).toBeDefined()
+  expect(comandoProhibido('git -C repo reset --hard HEAD~1', '')).toBeDefined()
+  expect(comandoProhibido('git -C repo clean -fd', '')).toBeDefined()
+  expect(comandoProhibido('git -C repo status', '')).toBeUndefined()
+  expect(comandoProhibido('sf project deploy start --target-org mi-sandbox', '', { ...org, soloValidar: true })).toContain('solo valida')
+  expect(comandoProhibido('sf project deploy validate --target-org mi-sandbox', '', { ...org, soloValidar: true })).toBeUndefined()
+})
+
+test('el tester solo despliega en la org de pruebas si hay una configurada', () => {
+  const tester = { permitirDeploy: true, orgPruebas: 'mi-sandbox' }
+  expect(comandoProhibido('sf project deploy start --target-org mi-sandbox', '', tester)).toBeUndefined()
+  expect(comandoProhibido('sf project deploy start --target-org otra', '', tester)).toBeDefined()
+  expect(comandoProhibido('sf project deploy start', '', { permitirDeploy: true })).toBeUndefined()
 })

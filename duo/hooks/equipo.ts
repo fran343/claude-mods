@@ -133,7 +133,8 @@ export function tareaDeDescripcion(descripcion: string | undefined): string | un
 }
 
 /** Minutos sin actividad a partir de los cuales se da a un agente por colgado. */
-export const MINUTOS_COLGADO = 15
+// Más que el comando más largo que lanzan (deploy validate --wait 60).
+export const MINUTOS_COLGADO = 65
 
 /** Un miembro cuenta como trabajando si lo está y no lleva demasiado sin dar señales. */
 export function activo(m: DuoMiembro | undefined, ahora: number): boolean {
@@ -155,7 +156,7 @@ export function rutaReserva(ruta: string): string {
 }
 
 /** Comandos que el modo equipo nunca deja ejecutar a sus agentes (el tester de Apex sí puede desplegar en sandbox). */
-export function comandoProhibido(cmd: string, ramaBase?: string, opciones: { permitirDeploy?: boolean; orgPruebas?: string } = {}): string | undefined {
+export function comandoProhibido(cmd: string, ramaBase?: string, opciones: { permitirDeploy?: boolean; orgPruebas?: string; soloValidar?: boolean } = {}): string | undefined {
   const base = ramaBase?.trim()
   const nombre = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const push = String.raw`\bgit\b(?:\s+(?:-C|-c)\s+\S+)*\s+push\b`
@@ -166,11 +167,16 @@ export function comandoProhibido(cmd: string, ramaBase?: string, opciones: { per
   if (base && dentro(String.raw`[\s:/]${nombre(base)}(?=[\s;&|)]|$)`).test(cmd)) return `subir directamente a la rama ${base}`
   if (/\bgh\s+pr\s+merge\b/.test(cmd)) return 'fusionar un pull request'
   if (/\bgh\s+pr\s+review\b[^\n]*--approve/.test(cmd)) return 'aprobar un pull request'
-  if (/\bgit\s+(reset\s+--hard|clean\s+-[a-z]*f)/.test(cmd)) return 'borrar cambios sin guardar con git reset --hard o git clean'
+  if (/\bgit\b(?:\s+(?:-C|-c)\s+\S+)*\s+(reset\s+--hard|clean\s+-[a-zA-Z]*f)/.test(cmd)) return 'borrar cambios sin guardar con git reset --hard o git clean'
   // Desplegar solo en la org de pruebas de /config, nombrada en el propio comando.
   const org = opciones.orgPruebas?.trim()
-  const enOrgPruebas = !!org && new RegExp(String.raw`(?:--target-org|-o)(?:\s+|=)["']?${nombre(org)}["']?(?=[\s;&|)]|$)`).test(cmd)
-  if (!opciones.permitirDeploy && !enOrgPruebas) {
+  // Todas las orgs nombradas en el comando tienen que ser la de pruebas.
+  const orgs = [...cmd.matchAll(/(?:--target-org|\s-o)(?:\s+|=)["']?([^\s"';&|)]+)/g)].map(m => m[1])
+  const enOrgPruebas = !!org && orgs.length > 0 && orgs.every(o => o === org)
+  const despliega = /\bsf\s+project\s+deploy\s+(start|quick)\b/.test(cmd) || /\bsf\s+deploy\s+metadata\b/.test(cmd)
+  if (despliega && opciones.soloValidar) return 'desplegar: el agente de entregas solo valida ("sf project deploy validate")'
+  // Con org de pruebas configurada, nadie (ni el tester) despliega en otra.
+  if (!(opciones.permitirDeploy && !org) && !enOrgPruebas) {
     if (/\bsf\s+project\s+deploy\s+(start|quick)\b/.test(cmd) || /\bsf\s+deploy\s+metadata\b/.test(cmd)) {
       return org
         ? `desplegar fuera de la org de pruebas (añade --target-org ${org}, o valida con "sf project deploy validate")`

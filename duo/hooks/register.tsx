@@ -694,7 +694,7 @@ export const register: Register = (on, options) => {
     const tool = String(e.tool)
     if (yo) {
       if (tool === 'Bash') {
-        const prohibido = comandoProhibido(String((e as unknown as { command?: unknown }).command ?? ''), ramaBase, { permitirDeploy: yo === 'tester', orgPruebas: orgApex })
+        const prohibido = comandoProhibido(String((e as unknown as { command?: unknown }).command ?? ''), ramaBase, { permitirDeploy: yo === 'tester', orgPruebas: orgApex, soloValidar: eq[yo]?.tipo === 'entregas' })
         if (prohibido) return { deny: `El modo equipo no permite ${prohibido}.` }
       }
       if (yo !== 'tester' && HERRAMIENTAS_EDICION.includes(tool)) {
@@ -713,6 +713,12 @@ export const register: Register = (on, options) => {
       await update($, seguimiento, f => ({ ...f, [yo]: anotar(f[yo], texto, archivo) }))
     }
     const r = await next(e)
+    // Tras una herramienta larga (un deploy con --wait), el agente sigue vivo.
+    if (yo && yo !== 'tester') {
+      try {
+        await update($, equipo, q => (q[yo]?.estado === 'trabajando' ? { ...q, [yo]: { ...q[yo], ultimo: Date.now() } } : q))
+      } catch {}
+    }
     if (!testerApex) return r
     if (tool !== 'Edit' && tool !== 'Write' && tool !== 'MultiEdit') return r
     if (r.deny !== undefined || r.isError) return r

@@ -26,7 +26,7 @@ El mod **duo** está instalado y ofrece estos tipos de agente, una pizarra compa
 
 ## Reservas de archivos
 
-Cada archivo lo edita un solo agente a la vez: si otro intenta editar uno que ya está en uso, se le deniega y se le dice quién lo tiene. Se liberan cuando el agente termina (o si lleva 15 minutos sin dar señales). Tú nunca te bloqueas. Por seguridad, los agentes del equipo no pueden hacer push forzado, subir a main, fusionar pull requests ni desplegar fuera de la org de pruebas: un `sf project deploy start` solo pasa si lleva `--target-org <orgApex>` (la org de pruebas de /config); sin ella configurada, solo `sf project deploy validate`. Pásales siempre el alias de la sandbox en el encargo.
+Cada archivo lo edita un solo agente a la vez: si otro intenta editar uno que ya está en uso, se le deniega y se le dice quién lo tiene. Se liberan cuando el agente termina (o si lleva 1 hora sin dar señales). Tú nunca te bloqueas. Por seguridad, los agentes del equipo no pueden hacer push forzado, subir a main, fusionar pull requests ni desplegar fuera de la org de pruebas: un `sf project deploy start` solo pasa si lleva `--target-org <orgApex>` (la org de pruebas de /config); sin ella configurada, solo `sf project deploy validate`. Pásales siempre el alias de la sandbox en el encargo.
 
 ## Tester de Apex
 
