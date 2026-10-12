@@ -1,11 +1,18 @@
 {
   "name": "claude-mods",
-  "owner": { "name": "fran343" },
+  "owner": {
+    "name": "fran343"
+  },
   "plugins": [
     {
       "name": "duo",
       "source": "./duo",
       "description": "Dos agentes que trabajan en paralelo y se hablan: uno analiza el impacto y otro implementa."
+    },
+    {
+      "name": "pruebas-e2e",
+      "source": "./pruebas-e2e",
+      "description": "Con /playwright genera y ejecuta pruebas Playwright del desarrollo en la sandbox de Salesforce."
     }
   ]
 }

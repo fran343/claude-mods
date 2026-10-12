@@ -1,0 +1,16 @@
+{
+  "name": "pruebas-e2e",
+  "version": "0.1.0",
+  "description": "Con /playwright, lee el manifest y el contexto del desarrollo y genera y ejecuta pruebas Playwright en la sandbox de Salesforce.",
+  "author": { "name": "fran343" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "orgPruebas": { "type": "string", "title": "Org de pruebas", "description": "Alias de la sandbox donde se ejecutan las pruebas Playwright. Vacío: la org por defecto del proyecto (solo si es sandbox).", "default": "" },
+    "manifest": { "type": "string", "title": "Manifest", "description": "Ruta del package.xml del desarrollo.", "default": "manifest/package.xml" },
+    "carpetaTests": { "type": "string", "title": "Carpeta de las pruebas", "description": "Dónde se guardan las pruebas Playwright.", "default": "tests/e2e" },
+    "ramaBase": { "type": "string", "title": "Rama base", "description": "Rama con la que se compara para saber qué ha cambiado. Vacío: la principal del repositorio.", "default": "" },
+    "navegador": { "type": "string", "title": "Navegador", "description": "Navegador en el que se ejecutan las pruebas.", "default": "chromium", "options": ["chromium", "firefox", "webkit"] },
+    "ejecutar": { "type": "boolean", "title": "Ejecutar las pruebas", "description": "Si está activado, además de escribirlas las ejecuta en la sandbox y corrige las que fallen por la propia prueba.", "default": true },
+    "modelo": { "type": "string", "title": "Modelo", "description": "Modelo del agente que escribe las pruebas (inherit = el de la conversación).", "default": "sonnet", "options": ["opus", "sonnet", "haiku", "inherit"] }
+  }
+}
