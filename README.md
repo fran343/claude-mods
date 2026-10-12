@@ -72,3 +72,60 @@ claude --plugin-dir claude-mods/duo
 claude plugin validate duo
 claude plugin test duo
 ```
+
+## pruebas-e2e: pruebas Playwright bajo demanda
+
+Cuando terminas un desarrollo en Salesforce y quieres comprobar que de verdad funciona en pantalla, escribes `/playwright` y un agente aparte se encarga: lee el `package.xml` y el contexto del desarrollo, escribe pruebas de Playwright de lo que ha cambiado y las ejecuta en tu sandbox. Si una prueba falla por culpa de la propia prueba, la corrige y repite. Si falla porque el desarrollo no hace lo que debe, no la toca para que pase: te lo cuenta como hallazgo.
+
+Solo trabaja cuando se lo pides. Claude no lo lanza por su cuenta.
+
+### Cómo se usa
+
+- `/playwright [qué probar]`: lanza el agente. Puedes decirle qué te interesa (por ejemplo, `/playwright el alta de un placement`) o dejarlo vacío para que pruebe lo que cambia en el manifest. Si ya hay unas pruebas en marcha, te avisa y no lanza otras.
+- `/playwright-panel`: abre el panel con el avance: en qué fase está, qué pruebas ha escrito, cuántas pasan y cuántas fallan, y qué está haciendo ahora mismo. Al terminar, Claude recibe el resumen y te lo cuenta.
+
+### Requisitos
+
+- Node instalado en tu ordenador (el agente instala Playwright por su cuenta, dentro de su carpeta).
+- El CLI de Salesforce (`sf`) con la sandbox ya conectada. El alias de esa sandbox lo pones en la opción `orgPruebas`.
+
+### Solo en local
+
+Por defecto todo lo de Playwright vive en una carpeta, `e2e-local/`, en la raíz de tu proyecto: sus pruebas, su configuración, sus dependencias, la sesión y los informes. Git no la ve, porque el mod la apunta en `.git/info/exclude`, que es una lista de ignorados que solo existe en tu ordenador y nunca se sube. Además, el agente no toca ningún archivo que ya esté en el repositorio (ni el `package.json`, ni el `.gitignore`), y al terminar comprueba con `git status` que no ha aparecido ningún cambio. Así no tienes nada que commitear ni que revisar.
+
+Si prefieres que las pruebas formen parte del repositorio, desactiva `soloLocal`.
+
+### Opciones (`/config`)
+
+- `soloLocal`: todo queda solo en tu ordenador y git no ve nada (activado por defecto).
+- `orgPruebas`: alias de la sandbox donde se ejecutan las pruebas (vacío: la org por defecto del proyecto, solo si es sandbox).
+- `manifest`: ruta del `package.xml` del desarrollo (`manifest/package.xml` por defecto).
+- `carpetaTests`: carpeta donde se guarda todo (`e2e-local` por defecto).
+- `ramaBase`: rama con la que se compara para saber qué ha cambiado (vacío: la principal del repositorio).
+- `navegador`: `chromium`, `firefox` o `webkit` (`chromium` por defecto).
+- `ejecutar`: además de escribir las pruebas, ejecutarlas y corregir las que fallen por sí mismas (activado por defecto). Si lo desactivas, solo las escribe.
+- `modelo`: modelo del agente (`opus`, `sonnet`, `haiku` o `inherit`, que usa el mismo que la conversación). `sonnet` por defecto.
+
+### Seguridad
+
+- Solo funciona en una sandbox: antes de empezar comprueba que la org lo es, y si no, se para y te avisa. Nunca prueba contra producción.
+- No guarda usuarios, contraseñas ni sesiones en el repositorio. La sesión se abre con el CLI de Salesforce y se queda dentro de la carpeta de pruebas, que git ignora.
+- No toca tu código: solo crea y edita archivos dentro de la carpeta de pruebas.
+- Los datos de prueba se crean en la propia prueba y se borran al terminar.
+
+### Instalación
+
+En una terminal, abre `claude` y escribe:
+
+```
+/plugin install pruebas-e2e@claude-mods
+```
+
+Si todavía no has añadido el marketplace, primero `/plugin marketplace add fran343/claude-mods`.
+
+### Desarrollo
+
+```
+claude plugin validate pruebas-e2e
+claude plugin test pruebas-e2e
+```
